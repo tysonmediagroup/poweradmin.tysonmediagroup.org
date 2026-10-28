@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="noir-aero">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerAdmin &bull; TYSON Media Group Executive Console</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    /* PowerAdmin Specific Styles */
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--card-radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat-number {
+      font-family: var(--font-heading);
+      font-size: 2.4rem;
+      font-weight: 600;
+      color: var(--text-white);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .user-table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.4);
+    }
+    .user-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    .user-table th {
+      padding: 14px 18px;
+      background: var(--bg-surface-solid);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .user-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
+    }
+    .user-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .user-avatar-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mini-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 1rem;
+      flex-shrink: 0;
+      border: 1.5px solid var(--border-subtle);
+      overflow: hidden;
+    }
+    .mini-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .action-btn-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-xs {
+      padding: 4px 10px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+    }
+    .btn-danger {
+      background: rgba(220, 38, 38, 0.2);
+      border-color: rgba(220, 38, 38, 0.5);
+      color: #fca5a5;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+      color: #ffffff;
+    }
+    /* Modal styles */
+    .admin-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .admin-modal-backdrop.open {
+      display: flex;
+    }
+    .admin-modal {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--card-radius);
+      padding: 28px 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    }
+    /* Access Gate Lock Screen */
+    .poweradmin-gate {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(15, 5, 5, 0.96) 0%, rgba(0, 0, 0, 0.99) 100%);
+      z-index: 2500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .poweradmin-gate.unlocked {
+      display: none;
+    }
+    .gate-card {
+      width: 100%;
+      max-width: 480px;
+      background: linear-gradient(180deg, rgba(30, 10, 10, 0.94) 0%, rgba(15, 5, 5, 0.98) 50%, rgba(5, 5, 5, 1) 100%);
+      border: 1.5px solid rgba(220, 38, 38, 0.45);
+      border-radius: 16px;
+      padding: 38px 32px;
+      text-align: center;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95), 0 0 40px rgba(220, 38, 38, 0.15);
+    }
+  </style>
+</head>
+<body class="poweradmin-body">
+
+  <!-- Restricted PowerAdmin Gate Overlay (ONLY Tyler / Executive accounts permitted) -->
+  <div class="poweradmin-gate" id="poweradminGate" role="dialog" aria-modal="true" aria-label="Executive Gate">
+    <div class="gate-card">
+      <img src="/assets/TYSONSoftwareBanner.png" alt="TYSON Software" class="auth-banner-logo" style="height: 52px; margin-bottom: 14px;">
+      <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">Executive Clearance Level 1</span>
+      <h1 class="auth-heading" style="font-size: 2rem; margin: 10px 0 4px;">PowerAdmin Console</h1>
+      <p class="brand-tmg-domain" style="font-size: 1.25rem; color: #fca5a5; margin-bottom: 12px;">poweradmin.tysonmediagroup.org</p>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 22px;">
+        Restricted to Tyler Custine / TYSON Executive Accounts (<span class="brand-tmg-domain">tyson</span>, <span class="brand-tmg-domain">t</span>).
+      </p>
+
+      <div class="auth-error" id="gateErrorBox" style="margin-bottom: 16px;"></div>
+
+      <form id="gateLoginForm" autocomplete="off" style="text-align: left;">
+        <div class="form-group">
+          <label class="form-label" for="gateUsername">Executive Handle</label>
+          <input type="text" id="gateUsername" class="form-input" placeholder="t or tyson" required autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="gatePassword">Password</label>
+          <input type="password" id="gatePassword" class="form-input" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px 18px; font-size: 1.2rem; background: #dc2626; border-color: #ef4444;">
+          Authenticate as Executive &rarr;
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; font-size: 0.85rem; color: var(--text-dim);">
+        <a href="https://auth.my.tysonmediagroup.org?app=poweradmin" class="btn btn-xs" style="margin-top: 6px;">Sign in via myTYSON SSO</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Main Header -->
+  <header class="main-header">
+    <a href="/" class="topbar-left">
+      <img src="/assets/TYSONSoftwareBanner.png" alt="TYSON Software" class="logo-img">
+    </a>
+
+    <nav class="main-nav">
+      <span class="nav-link active brand-tmg-domain">poweradmin.tysonmediagroup.org</span>
+    </nav>
+
+    <div class="topbar-actions">
+      <span class="status-badge badge-official" id="adminBadgeLabel" style="background: rgba(220, 38, 38, 0.2); border-color: #dc2626; color: #fca5a5;">
+        Tyler Custine &bull; Executive Lead
+      </span>
+      <a href="https://my.tysonmediagroup.org" class="btn">myTYSON Dashboard</a>
+      <button type="button" class="btn btn-danger" id="adminSignOutBtn">Sign Out</button>
+      <button class="settings-toggle-btn" id="settings-toggle-btn" title="Theme Settings" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Centerpiece Domain Banner -->
+  <section class="tmg-editorial-stage">
+    <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">Tyler Custine &bull; Executive Moderator Console</span>
+    <h2 class="domain-centerpiece-title brand-tmg-domain">poweradmin.tysonmediagroup.org</h2>
+    <p class="domain-centerpiece-sub">User Moderation, On-the-Fly Provisioning &bull; Zero Captcha / Zero Verification</p>
+  </section>
+
+  <main class="dashboard-main" style="max-width: 1400px; margin: 0 auto 60px; padding: 0 1.5rem;">
+
+    <!-- Top Key Metrics -->
+    <div class="admin-stats-grid">
+      <div class="stat-card">
+        <span class="stat-number" id="statTotalUsers">0</span>
+        <span class="stat-label">Total myTYSON Users</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="statTeamUsers">0</span>
+        <span class="stat-label">Verified Team Accounts</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="statDynamicUsers">0</span>
+        <span class="stat-label">Dynamic Accounts</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" style="color: #34d399;" id="statSystemStatus">ONLINE</span>
+        <span class="stat-label">Edge Sync Node</span>
+      </div>
+    </div>
+
+    <!-- Section 1: Create User on the Fly (Zero Captcha, Zero Email Verification) -->
+    <section class="card card-full" style="margin-bottom: 24px; border-color: rgba(220, 38, 38, 0.35);">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title" style="color: #ffffff;">Create User on the Fly</h2>
+          <p class="card-subtitle">
+            Executive creation skips all captchas and email verification. Single-letter and two-letter handles permitted.
+          </p>
+        </div>
+        <span class="tyson-white-badge"><img src="/assets/tyson-white-badge.png" alt="TYSON"></span>
+      </div>
+
+      <div class="auth-error" id="createFlyErrorBox" style="margin-bottom: 14px;"></div>
+
+      <form id="createFlyForm" autocomplete="off">
+        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+          <div class="form-group">
+            <label class="form-label" for="flyUsername">Handle / Username *</label>
+            <input type="text" id="flyUsername" class="form-input" placeholder="e.g. x, ty, flame, jordan" required>
+            <span style="font-size: 0.76rem; color: var(--text-dim); margin-top: 3px; display: block;">Any length allowed for PowerAdmin</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="flyDisplayName">Display Name *</label>
+            <input type="text" id="flyDisplayName" class="form-input" placeholder="Full Legal or Display Name" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="flyPassword">Initial Password *</label>
+            <input type="text" id="flyPassword" class="form-input" value="hug" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="flyDivision">Division / Organization</label>
+            <input type="text" id="flyDivision" class="form-input" placeholder="e.g. TYSON Atlantis, Core Systems" value="TYSON Media Group">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="flyRole">Role Title</label>
+            <input type="text" id="flyRole" class="form-input" placeholder="e.g. Executive Lead, Member" value="TYSON Member">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="flyBadgeType">Badge Preset</label>
+            <select id="flyBadgeType" class="form-input" style="height: 48px;">
+              <option value="badge-member">Standard Member</option>
+              <option value="badge-team" selected>TYSON Team Member</option>
+              <option value="badge-official">Official TYSON Account</option>
+              <option value="badge-support">Official Support Account</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin: 14px 0 18px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
+            <input type="checkbox" id="flyIsTeam" checked>
+            <span>TYSON Team Member (`Y`)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
+            <input type="checkbox" id="flyHasTysonBadge" checked>
+            <span>Verified TYSON White Badge</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
+            <input type="checkbox" id="flyShowRealName" checked>
+            <span>Show Real Name Publicly</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.15rem; background: #dc2626; border-color: #ef4444;">
+          Create User on the Fly &rarr;
+        </button>
+      </form>
+    </section>
+
+    <!-- Section 2: User Moderation & Directory Table -->
+    <section class="card card-full">
+      <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+        <div>
+          <h2 class="card-title">User Moderation &amp; Management Directory</h2>
+          <p class="card-subtitle">Moderate accounts, reset passwords, change bio, or delete users on the fly</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text" id="userSearchInput" class="form-input" placeholder="Search by name, handle, role..." style="width: 260px; padding: 8px 14px;">
+          <button type="button" class="btn" id="refreshUsersBtn">Refresh</button>
+        </div>
+      </div>
+
+      <div class="user-table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Handle / Domain</th>
+              <th>Role &amp; Division</th>
+              <th>Team</th>
+              <th>Badges</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit User Modal -->
+  <div class="admin-modal-backdrop" id="editModalBackdrop">
+    <div class="admin-modal">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.8rem; color: #ffffff;" id="editModalTitle">Edit User</h3>
+        <button type="button" class="btn btn-xs" id="closeEditModalBtn">Close</button>
+      </div>
+      <form id="editUserForm">
+        <input type="hidden" id="editUserSlug">
+        <div class="form-group">
+          <label class="form-label" for="editDisplayName">Display Name</label>
+          <input type="text" id="editDisplayName" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editRole">Role</label>
+          <input type="text" id="editRole" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editDivision">Division</label>
+          <input type="text" id="editDivision" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editBio">Bio</label>
+          <textarea id="editBio" class="form-textarea" style="height: 70px;"></textarea>
+        </div>
+        <div style="display: flex; gap: 16px; margin-bottom: 18px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="editIsTeam">
+            <span>Team Member</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="editHasBadge">
+            <span>White Badge</span>
+          </label>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+          <button type="button" class="btn" id="cancelEditBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div class="admin-modal-backdrop" id="passwordModalBackdrop">
+    <div class="admin-modal">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.8rem; color: #ffffff;">Reset Password</h3>
+        <button type="button" class="btn btn-xs" id="closePassModalBtn">Close</button>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 14px;" id="passModalTargetUser">User: </p>
+      <form id="resetPassForm">
+        <input type="hidden" id="passModalSlug">
+        <div class="form-group">
+          <label class="form-label" for="newPasswordInput">New Password</label>
+          <input type="text" id="newPasswordInput" class="form-input" placeholder="New password" required autofocus>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Set Password on the Fly</button>
+          <button type="button" class="btn" id="cancelPassBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-banner" id="adminToast">Action completed successfully.</div>
+
+  <!-- Slide-out Multi-Theme Settings Drawer -->
+  <div class="settings-drawer-backdrop" id="settings-drawer-backdrop"></div>
+  <aside class="settings-drawer" id="settings-drawer" aria-label="Appearance Settings">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.75rem; font-weight: 500; color: var(--text-white);">Appearance &amp; Theme</h3>
+      <button type="button" class="btn" id="settings-close-btn" style="padding: 6px 14px;">Close</button>
+    </div>
+    <p style="font-size: 0.88rem; color: var(--text-muted);">Select a TYSON visual theme:</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button type="button" class="theme-option-btn active" data-set-theme="noir-aero">
+        <span>Black Frutiger Aero</span>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Obsidian Gloss</span>
+      </button>
+      <button type="button" class="theme-option-btn" data-set-theme="noir">
+        <span>Noir Midnight</span>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Architectural Flat</span>
+      </button>
+      <button type="button" class="theme-option-btn" data-set-theme="frutiger">
+        <span>Frutiger Aero Aqua</span>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Machined Glass</span>
+      </button>
+      <button type="button" class="theme-option-btn" data-set-theme="wii">
+        <span>Nintendo Wii</span>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">System Channels</span>
+      </button>
+      <button type="button" class="theme-option-btn" data-set-theme="nature">
+        <span>Nature Botanical</span>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Deep Moss</span>
+      </button>
+    </div>
+  </aside>
+
+  <script src="/mytyson-core.js"></script>
+  <script>
+    (function () {
+      var core = window.MyTysonCore;
+      var gate = document.getElementById('poweradminGate');
+      var gateErrorBox = document.getElementById('gateErrorBox');
+      var toast = document.getElementById('adminToast');
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('visible');
+        setTimeout(function () { toast.classList.remove('visible'); }, 3200);
+      }
+
+      function checkAccess() {
+        var params = new URLSearchParams(window.location.search);
+        var ssoParam = params.get('mytyson_sso');
+        if (ssoParam) {
+          try {
+            var decoded = JSON.parse(atob(ssoParam));
+            if (decoded && decoded.slug) {
+              if (core.isPowerAdmin(decoded.slug)) {
+                var acc = core.findAccount(decoded.slug);
+                if (acc) core.createSessionForAccount(acc);
+                gate.classList.add('unlocked');
+                return true;
+              }
+            }
+          } catch (e) {}
+        }
+
+        var session = core.getSession();
+        if (session && session.slug && core.isPowerAdmin(session.slug)) {
+          gate.classList.add('unlocked');
+          return true;
+        }
+
+        gate.classList.remove('unlocked');
+        if (session && session.slug) {
+          gateErrorBox.textContent = 'Account @' + session.slug + ' is not authorized for PowerAdmin. Sign in as Executive Lead (t, tyson).';
+          gateErrorBox.classList.add('visible');
+        }
+        return false;
+      }
+
+      document.getElementById('gateLoginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        gateErrorBox.classList.remove('visible');
+        var u = document.getElementById('gateUsername').value.trim();
+        var p = document.getElementById('gatePassword').value;
+
+        var acc = core.findAccount(u);
+        if (!acc || !core.isPowerAdmin(acc.slug)) {
+          gateErrorBox.textContent = 'Access Denied: Only root executive accounts (t, tyson) can access PowerAdmin.';
+          gateErrorBox.classList.add('visible');
+          return;
+        }
+
+        var s = core.authenticate(u, p);
+        if (!s) {
+          gateErrorBox.textContent = 'Invalid executive credentials.';
+          gateErrorBox.classList.add('visible');
+          return;
+        }
+
+        gate.classList.add('unlocked');
+        renderDirectory();
+      });
+
+      document.getElementById('adminSignOutBtn').addEventListener('click', function () {
+        core.clearSession();
+        window.location.reload();
+      });
+
+      function renderDirectory() {
+        var all = core.getAllAccounts();
+        var tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+
+        var total = all.length;
+        var teamCount = 0;
+        var dynamicCount = 0;
+
+        var search = (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
+
+        all.forEach(function (acc) {
+          if (acc.team === 'Y') teamCount++;
+          if (acc.isDynamic) dynamicCount++;
+
+          if (search) {
+            var matchStr = (acc.name + ' ' + acc.slug + ' ' + (acc.role || '') + ' ' + (acc.division || '')).toLowerCase();
+            if (matchStr.indexOf(search) === -1) return;
+          }
+
+          var tr = document.createElement('tr');
+
+          var avatarHtml = acc.pfpUrl
+            ? '<img src="' + acc.pfpUrl + '" alt="' + acc.name + '">'
+            : (acc.initials || acc.slug.slice(0, 2).toUpperCase());
+
+          var isRoot = (acc.slug === 'tyson' || acc.slug === 't');
+
+          tr.innerHTML =
+            '<td>' +
+              '<div class="user-avatar-cell">' +
+                '<div class="mini-avatar" style="background: ' + (acc.avatarBg || '#18181b') + ';">' + avatarHtml + '</div>' +
+                '<div>' +
+                  '<div style="font-weight: 600; color: #ffffff;">' + (acc.name || acc.slug) + '</div>' +
+                  '<div style="font-size: 0.78rem; color: var(--text-muted);">' + (acc.showRealName === false ? 'Name hidden publicly' : 'Name visible') + '</div>' +
+                '</div>' +
+              '</div>' +
+            '</td>' +
+            '<td><span class="brand-tmg-domain" style="color: #ffffff;">@' + acc.slug + '</span><div style="font-size: 0.75rem; color: var(--text-dim);">' + acc.username + '</div></td>' +
+            '<td><div>' + (acc.role || 'Member') + '</div><div style="font-size: 0.78rem; color: var(--text-muted);">' + (acc.division || 'TYSON') + '</div></td>' +
+            '<td><span class="status-badge ' + (acc.team === 'Y' ? 'badge-team' : 'badge-member') + '">' + (acc.team === 'Y' ? 'Team: Y' : 'Team: N') + '</span></td>' +
+            '<td>' +
+              (acc.hasTysonBadge ? '<span class="tyson-white-badge" style="height: 22px; padding: 2px 6px; margin-right: 4px;"><img src="/assets/tyson-white-badge.png" style="height: 12px;"></span>' : '') +
+              '<span class="status-badge ' + (acc.badgeClass || 'badge-member') + '" style="font-size: 0.72rem;">' + (acc.badge || 'Member') + '</span>' +
+            '</td>' +
+            '<td style="text-align: right;">' +
+              '<div class="action-btn-group" style="justify-content: flex-end;">' +
+                '<a href="https://tysonmediagroup.org/' + acc.slug + '" target="_blank" class="btn btn-xs">Profile &rarr;</a>' +
+                '<button type="button" class="btn btn-xs js-reset-pass" data-slug="' + acc.slug + '">Reset Password</button>' +
+                '<button type="button" class="btn btn-xs js-edit-user" data-slug="' + acc.slug + '">Edit</button>' +
+                (!isRoot ? '<button type="button" class="btn btn-xs btn-danger js-delete-user" data-slug="' + acc.slug + '">Delete</button>' : '') +
+              '</div>' +
+            '</td>';
+
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById('statTotalUsers').textContent = total;
+        document.getElementById('statTeamUsers').textContent = teamCount;
+        document.getElementById('statDynamicUsers').textContent = dynamicCount;
+
+        // Attach action handlers
+        document.querySelectorAll('.js-reset-pass').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            openPasswordModal(btn.getAttribute('data-slug'));
+          });
+        });
+
+        document.querySelectorAll('.js-edit-user').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            openEditModal(btn.getAttribute('data-slug'));
+          });
+        });
+
+        document.querySelectorAll('.js-delete-user').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var slug = btn.getAttribute('data-slug');
+            if (confirm('Are you sure you want to delete user @' + slug + ' on the fly?')) {
+              core.deleteAccount(slug, function () {
+                showToast('Deleted user @' + slug);
+                renderDirectory();
+              });
+            }
+          });
+        });
+      }
+
+      // Create User on the Fly Submit
+      var flyForm = document.getElementById('createFlyForm');
+      var flyErr = document.getElementById('createFlyErrorBox');
+
+      flyForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        flyErr.classList.remove('visible');
+
+        var u = document.getElementById('flyUsername').value.trim().toLowerCase();
+        var name = document.getElementById('flyDisplayName').value.trim();
+        var pass = document.getElementById('flyPassword').value;
+        var div = document.getElementById('flyDivision').value.trim();
+        var role = document.getElementById('flyRole').value.trim();
+        var bType = document.getElementById('flyBadgeType').value;
+        var isTeam = document.getElementById('flyIsTeam').checked;
+        var hasBadge = document.getElementById('flyHasTysonBadge').checked;
+        var showReal = document.getElementById('flyShowRealName').checked;
+
+        var bText = 'Standard Member';
+        if (bType === 'badge-team') bText = 'TYSON Team';
+        if (bType === 'badge-official') bText = 'Official TYSON Account';
+        if (bType === 'badge-support') bText = 'Official Support Account';
+
+        // Executive creation bypasses the 3-character rule!
+        core.createAccount({
+          username: u,
+          slug: u,
+          name: name,
+          password: pass,
+          division: div,
+          role: role,
+          team: isTeam ? 'Y' : 'N',
+          badge: bText,
+          badgeClass: bType,
+          hasTysonBadge: hasBadge,
+          showRealName: showReal,
+          isPowerAdmin: true
+        }, function (res) {
+          if (!res || !res.ok) {
+            flyErr.textContent = (res && res.error) ? res.error : 'Creation failed';
+            flyErr.classList.add('visible');
+            return;
+          }
+          showToast('User @' + u + ' created successfully on the fly!');
+          flyForm.reset();
+          document.getElementById('flyPassword').value = 'hug';
+          document.getElementById('flyIsTeam').checked = true;
+          document.getElementById('flyHasTysonBadge').checked = true;
+          renderDirectory();
+        });
+      });
+
+      // Modals
+      var editModal = document.getElementById('editModalBackdrop');
+      var passModal = document.getElementById('passwordModalBackdrop');
+
+      function openEditModal(slug) {
+        var acc = core.findAccount(slug);
+        if (!acc) return;
+        document.getElementById('editUserSlug').value = acc.slug;
+        document.getElementById('editModalTitle').textContent = 'Edit @' + acc.slug;
+        document.getElementById('editDisplayName').value = acc.name || '';
+        document.getElementById('editRole').value = acc.role || '';
+        document.getElementById('editDivision').value = acc.division || '';
+        document.getElementById('editBio').value = acc.bio || '';
+        document.getElementById('editIsTeam').checked = (acc.team === 'Y');
+        document.getElementById('editHasBadge').checked = !!acc.hasTysonBadge;
+        editModal.classList.add('open');
+      }
+
+      document.getElementById('closeEditModalBtn').addEventListener('click', function () { editModal.classList.remove('open'); });
+      document.getElementById('cancelEditBtn').addEventListener('click', function () { editModal.classList.remove('open'); });
+
+      document.getElementById('editUserForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var slug = document.getElementById('editUserSlug').value;
+        var dName = document.getElementById('editDisplayName').value.trim();
+        var role = document.getElementById('editRole').value.trim();
+        var div = document.getElementById('editDivision').value.trim();
+        var bio = document.getElementById('editBio').value.trim();
+        var isTeam = document.getElementById('editIsTeam').checked;
+        var hasBadge = document.getElementById('editHasBadge').checked;
+
+        core.updateAccount(slug, {
+          name: dName,
+          role: role,
+          division: div,
+          bio: bio,
+          team: isTeam ? 'Y' : 'N',
+          hasTysonBadge: hasBadge
+        }, function () {
+          core.saveCustomProfile(slug, {
+            displayName: dName,
+            division: div,
+            bio: bio
+          });
+          showToast('Updated @' + slug);
+          editModal.classList.remove('open');
+          renderDirectory();
+        });
+      });
+
+      function openPasswordModal(slug) {
+        document.getElementById('passModalSlug').value = slug;
+        document.getElementById('passModalTargetUser').textContent = 'Setting password for: @' + slug;
+        document.getElementById('newPasswordInput').value = '';
+        passModal.classList.add('open');
+        document.getElementById('newPasswordInput').focus();
+      }
+
+      document.getElementById('closePassModalBtn').addEventListener('click', function () { passModal.classList.remove('open'); });
+      document.getElementById('cancelPassBtn').addEventListener('click', function () { passModal.classList.remove('open'); });
+
+      document.getElementById('resetPassForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var slug = document.getElementById('passModalSlug').value;
+        var newPass = document.getElementById('newPasswordInput').value.trim();
+        if (!newPass) return;
+
+        core.updateAccount(slug, { password: newPass }, function () {
+          showToast('Password updated on the fly for @' + slug);
+          passModal.classList.remove('open');
+        });
+      });
+
+      document.getElementById('userSearchInput').addEventListener('input', renderDirectory);
+      document.getElementById('refreshUsersBtn').addEventListener('click', function () {
+        core.syncAccountsFromCloud(renderDirectory);
+      });
+
+      // Init
+      if (core.syncAccountsFromCloud) {
+        core.syncAccountsFromCloud(function () {
+          if (checkAccess()) renderDirectory();
+        });
+      } else {
+        if (checkAccess()) renderDirectory();
+      }
+    })();
+  </script>
+</body>
+</html>
