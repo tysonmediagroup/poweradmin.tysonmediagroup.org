@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PowerAdmin &bull; TYSON Media Group Executive Console</title>
+  <title>TYSON Administration | power.administration.tysonmediagroup.org</title>
   <link rel="stylesheet" href="/styles.css">
   <style>
     /* PowerAdmin Specific Styles */
@@ -161,30 +161,30 @@
 </head>
 <body class="poweradmin-body">
 
-  <!-- Restricted PowerAdmin Gate Overlay (ONLY Tyler / Executive accounts permitted) -->
-  <div class="poweradmin-gate" id="poweradminGate" role="dialog" aria-modal="true" aria-label="Executive Gate">
+  <!-- Restricted PowerAdmin Gate Overlay -->
+  <div class="poweradmin-gate" id="poweradminGate" role="dialog" aria-modal="true" aria-label="Administrative Gate">
     <div class="gate-card">
       <img src="/assets/TYSONSoftwareBanner.png" alt="TYSON Software" class="auth-banner-logo" style="height: 52px; margin-bottom: 14px;">
-      <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">Executive Clearance Level 1</span>
-      <h1 class="auth-heading" style="font-size: 2rem; margin: 10px 0 4px;">PowerAdmin Console</h1>
-      <p class="brand-tmg-domain" style="font-size: 1.25rem; color: #fca5a5; margin-bottom: 12px;">poweradmin.tysonmediagroup.org</p>
+      <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">Administrative Clearance Required</span>
+      <h1 class="auth-heading" style="font-size: 2rem; margin: 10px 0 4px;">TYSON Administration</h1>
+      <p class="brand-tmg-domain" style="font-size: 1.25rem; color: #fca5a5; margin-bottom: 12px;">power.administration.tysonmediagroup.org</p>
       <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 22px;">
-        Restricted to Tyler Custine / TYSON Executive Accounts (<span class="brand-tmg-domain">tyson</span>, <span class="brand-tmg-domain">t</span>).
+        Restricted Access. Verified Administrative Clearance Required.
       </p>
 
       <div class="auth-error" id="gateErrorBox" style="margin-bottom: 16px;"></div>
 
       <form id="gateLoginForm" autocomplete="off" style="text-align: left;">
         <div class="form-group">
-          <label class="form-label" for="gateUsername">Executive Handle</label>
-          <input type="text" id="gateUsername" class="form-input" placeholder="t or tyson" required autofocus>
+          <label class="form-label" for="gateUsername">Administrative Handle</label>
+          <input type="text" id="gateUsername" class="form-input" placeholder="Username or corporate handle" required autofocus>
         </div>
         <div class="form-group">
           <label class="form-label" for="gatePassword">Password</label>
           <input type="password" id="gatePassword" class="form-input" placeholder="Password" required>
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px 18px; font-size: 1.2rem; background: #dc2626; border-color: #ef4444;">
-          Authenticate as Executive &rarr;
+          Authenticate &rarr;
         </button>
       </form>
 
@@ -201,12 +201,12 @@
     </a>
 
     <nav class="main-nav">
-      <span class="nav-link active brand-tmg-domain">poweradmin.tysonmediagroup.org</span>
+      <span class="nav-link active brand-tmg-domain">power.administration.tysonmediagroup.org</span>
     </nav>
 
     <div class="topbar-actions">
       <span class="status-badge badge-official" id="adminBadgeLabel" style="background: rgba(220, 38, 38, 0.2); border-color: #dc2626; color: #fca5a5;">
-        Tyler Custine &bull; Executive Lead
+        Administrator &bull; Clearance Level 1
       </span>
       <a href="https://my.tysonmediagroup.org" class="btn">myTYSON Dashboard</a>
       <button type="button" class="btn btn-danger" id="adminSignOutBtn">Sign Out</button>
@@ -221,9 +221,9 @@
 
   <!-- Centerpiece Domain Banner -->
   <section class="tmg-editorial-stage">
-    <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">Tyler Custine &bull; Executive Moderator Console</span>
-    <h2 class="domain-centerpiece-title brand-tmg-domain">poweradmin.tysonmediagroup.org</h2>
-    <p class="domain-centerpiece-sub">User Moderation, On-the-Fly Provisioning &bull; Zero Captcha / Zero Verification</p>
+    <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">TYSON Administration &bull; Security Node</span>
+    <h2 class="domain-centerpiece-title brand-tmg-domain">power.administration.tysonmediagroup.org</h2>
+    <p class="domain-centerpiece-sub">Administrative Moderation, Directory Management &bull; Zero Captcha / Zero Verification</p>
   </section>
 
   <main class="dashboard-main" style="max-width: 1400px; margin: 0 auto 60px; padding: 0 1.5rem;">
@@ -469,6 +469,14 @@
         setTimeout(function () { toast.classList.remove('visible'); }, 3200);
       }
 
+      function updateAdminBadge(activeSlug) {
+        var adminLabel = document.getElementById('adminBadgeLabel');
+        if (!adminLabel) return;
+        var acc = core.findAccount(activeSlug);
+        var displayName = (acc && (acc.name || acc.displayName)) || activeSlug || 'Administrator';
+        adminLabel.textContent = displayName + ' \u2022 Administrator';
+      }
+
       function checkAccess() {
         var params = new URLSearchParams(window.location.search);
         var ssoParam = params.get('mytyson_sso');
@@ -480,6 +488,7 @@
                 var acc = core.findAccount(decoded.slug);
                 if (acc) core.createSessionForAccount(acc);
                 gate.classList.add('unlocked');
+                updateAdminBadge(decoded.slug);
                 return true;
               }
             }
@@ -489,12 +498,13 @@
         var session = core.getSession();
         if (session && session.slug && core.isPowerAdmin(session.slug)) {
           gate.classList.add('unlocked');
+          updateAdminBadge(session.slug);
           return true;
         }
 
         gate.classList.remove('unlocked');
         if (session && session.slug) {
-          gateErrorBox.textContent = 'Account @' + session.slug + ' is not authorized for PowerAdmin. Sign in as Executive Lead (t, tyson).';
+          gateErrorBox.textContent = 'Access Denied: Your account (@' + session.slug + ') does not have administrative clearance.';
           gateErrorBox.classList.add('visible');
         }
         return false;
@@ -508,19 +518,20 @@
 
         var acc = core.findAccount(u);
         if (!acc || !core.isPowerAdmin(acc.slug)) {
-          gateErrorBox.textContent = 'Access Denied: Only root executive accounts (t, tyson) can access PowerAdmin.';
+          gateErrorBox.textContent = 'Access Denied: Your account does not have administrative clearance.';
           gateErrorBox.classList.add('visible');
           return;
         }
 
         var s = core.authenticate(u, p);
         if (!s) {
-          gateErrorBox.textContent = 'Invalid executive credentials.';
+          gateErrorBox.textContent = 'Invalid administrative credentials.';
           gateErrorBox.classList.add('visible');
           return;
         }
 
         gate.classList.add('unlocked');
+        updateAdminBadge(acc.slug);
         renderDirectory();
       });
 
@@ -555,7 +566,7 @@
             ? '<img src="' + acc.pfpUrl + '" alt="' + acc.name + '">'
             : (acc.initials || acc.slug.slice(0, 2).toUpperCase());
 
-          var isRoot = (acc.slug === 'tyson' || acc.slug === 't');
+          var isProtected = (acc.slug === 'tyson' || acc.slug === 't' || acc.slug === 'ash' || acc.slug === 'a');
 
           tr.innerHTML =
             '<td>' +
@@ -579,7 +590,7 @@
                 '<a href="https://tysonmediagroup.org/' + acc.slug + '" target="_blank" class="btn btn-xs">Profile &rarr;</a>' +
                 '<button type="button" class="btn btn-xs js-reset-pass" data-slug="' + acc.slug + '">Reset Password</button>' +
                 '<button type="button" class="btn btn-xs js-edit-user" data-slug="' + acc.slug + '">Edit</button>' +
-                (!isRoot ? '<button type="button" class="btn btn-xs btn-danger js-delete-user" data-slug="' + acc.slug + '">Delete</button>' : '') +
+                (!isProtected ? '<button type="button" class="btn btn-xs btn-danger js-delete-user" data-slug="' + acc.slug + '">Delete</button>' : '') +
               '</div>' +
             '</td>';
 
