@@ -620,7 +620,7 @@
             if (confirm('Are you sure you want to delete user @' + slug + ' on the fly?')) {
               core.deleteAccount(slug, function () {
                 showToast('Deleted user @' + slug);
-                renderDirectory();
+                core.syncAccountsFromCloud(renderDirectory);
               });
             }
           });
@@ -675,7 +675,7 @@
           document.getElementById('flyPassword').value = 'hug';
           document.getElementById('flyIsTeam').checked = true;
           document.getElementById('flyHasTysonBadge').checked = true;
-          renderDirectory();
+          core.syncAccountsFromCloud(renderDirectory);
         });
       });
 
@@ -725,7 +725,7 @@
           });
           showToast('Updated @' + slug);
           editModal.classList.remove('open');
-          renderDirectory();
+          core.syncAccountsFromCloud(renderDirectory);
         });
       });
 
