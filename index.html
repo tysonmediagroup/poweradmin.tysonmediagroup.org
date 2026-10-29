@@ -6,7 +6,83 @@
   <title>TYSON Administration | power.administration.tysonmediagroup.org</title>
   <link rel="stylesheet" href="/styles.css">
   <style>
-    /* PowerAdmin Specific Styles */
+    /* PowerAdmin Crimson Obsidian Aero Theme */
+    body.poweradmin-body {
+      background-color: #060102;
+      background-image:
+        radial-gradient(ellipse 90% 45% at 50% -5%, rgba(239, 68, 68, 0.28) 0%, rgba(185, 28, 28, 0.12) 40%, rgba(15, 2, 4, 0.95) 75%, #000000 100%),
+        radial-gradient(circle at 10% 20%, rgba(220, 38, 38, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 30%, rgba(220, 38, 38, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, #0d0204 0%, #000000 100%);
+      color: #f3f4f6;
+    }
+
+    .poweradmin-body .main-header {
+      background: linear-gradient(180deg, #2b0d10 0%, #1a0709 49%, #0e0305 50%, #060102 100%);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.45);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 120, 120, 0.35), 0 0 25px rgba(220, 38, 38, 0.18);
+    }
+
+    .poweradmin-body .nav-link.active {
+      color: #fca5a5;
+      text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    }
+    .poweradmin-body .nav-link.active::after {
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
+    }
+
+    .poweradmin-body .editorial-tag {
+      border-color: rgba(239, 68, 68, 0.55);
+      color: #fca5a5;
+      background: rgba(220, 38, 38, 0.15);
+      box-shadow: 0 0 16px rgba(220, 38, 38, 0.25);
+    }
+
+    .poweradmin-body .domain-centerpiece-title {
+      color: #ffffff;
+      text-shadow: 0 0 30px rgba(239, 68, 68, 0.45);
+    }
+
+    .poweradmin-body .card {
+      background: linear-gradient(180deg, rgba(32, 10, 13, 0.94) 0%, rgba(18, 5, 7, 0.97) 49%, rgba(10, 3, 4, 0.98) 50%, rgba(5, 1, 2, 0.99) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), inset 0 1px 0 rgba(255, 140, 140, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.85), 0 0 30px rgba(220, 38, 38, 0.12);
+    }
+
+    .poweradmin-body .card-title {
+      color: #ffffff;
+    }
+
+    .poweradmin-body .form-input {
+      background: #0f0305;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #ffffff;
+    }
+    .poweradmin-body .form-input:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.5), inset 0 1px 3px rgba(0, 0, 0, 0.8);
+      outline: none;
+    }
+    .poweradmin-body .form-label {
+      color: #fca5a5;
+      font-weight: 500;
+    }
+
+    .poweradmin-body .btn-primary {
+      background: linear-gradient(180deg, #ef4444 0%, #dc2626 49%, #b91c1c 50%, #991b1b 100%);
+      border: 1px solid #f87171;
+      color: #ffffff;
+      box-shadow: 0 8px 22px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    .poweradmin-body .btn-primary:hover {
+      background: linear-gradient(180deg, #f87171 0%, #ef4444 49%, #dc2626 50%, #b91c1c 100%);
+      border-color: #ffffff;
+      box-shadow: 0 10px 28px rgba(239, 68, 68, 0.7), inset 0 1px 0 #ffffff;
+      transform: translateY(-2px);
+    }
+
     .admin-stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -14,24 +90,32 @@
       margin-bottom: 24px;
     }
     .stat-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      background: linear-gradient(180deg, rgba(38, 12, 15, 0.9) 0%, rgba(20, 6, 8, 0.95) 50%, rgba(10, 3, 4, 0.98) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.35);
       border-radius: var(--card-radius);
       padding: 18px 20px;
       display: flex;
       flex-direction: column;
       gap: 6px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.92), inset 0 1px 0 rgba(255, 140, 140, 0.35), 0 0 20px rgba(220, 38, 38, 0.14);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+      border-color: #ef4444;
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 160, 160, 0.5), 0 0 28px rgba(239, 68, 68, 0.3);
     }
     .stat-number {
       font-family: var(--font-heading);
       font-size: 2.4rem;
       font-weight: 600;
-      color: var(--text-white);
+      color: #fca5a5;
+      text-shadow: 0 0 16px rgba(239, 68, 68, 0.55);
       line-height: 1;
     }
     .stat-label {
       font-size: 0.85rem;
-      color: var(--text-muted);
+      color: #f87171;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       font-weight: 600;
@@ -39,8 +123,9 @@
     .user-table-wrap {
       overflow-x: auto;
       border-radius: 12px;
-      border: 1px solid var(--border-subtle);
-      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: rgba(12, 3, 4, 0.65);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 20px rgba(220, 38, 38, 0.1);
     }
     .user-table {
       width: 100%;
@@ -50,21 +135,21 @@
     }
     .user-table th {
       padding: 14px 18px;
-      background: var(--bg-surface-solid);
-      border-bottom: 1px solid var(--border-subtle);
+      background: linear-gradient(180deg, #260c0f 0%, #150507 100%);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.35);
       font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--text-dim);
+      color: #fca5a5;
       font-weight: 600;
     }
     .user-table td {
       padding: 14px 18px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.15);
       vertical-align: middle;
     }
     .user-table tr:hover td {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(220, 38, 38, 0.08);
     }
     .user-avatar-cell {
       display: flex;
@@ -82,8 +167,9 @@
       color: white;
       font-size: 1rem;
       flex-shrink: 0;
-      border: 1.5px solid var(--border-subtle);
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
       overflow: hidden;
+      box-shadow: 0 0 10px rgba(220, 38, 38, 0.25);
     }
     .mini-avatar img {
       width: 100%;
@@ -101,19 +187,22 @@
       border-radius: 8px;
     }
     .btn-danger {
-      background: rgba(220, 38, 38, 0.2);
-      border-color: rgba(220, 38, 38, 0.5);
+      background: linear-gradient(180deg, rgba(220, 38, 38, 0.35) 0%, rgba(153, 27, 27, 0.45) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.65);
       color: #fca5a5;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
     }
     .btn-danger:hover {
       background: #dc2626;
+      border-color: #f87171;
       color: #ffffff;
+      box-shadow: 0 6px 18px rgba(239, 68, 68, 0.6);
     }
     /* Modal styles */
     .admin-modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.88);
       backdrop-filter: blur(8px);
       z-index: 3000;
       display: none;
@@ -127,17 +216,17 @@
     .admin-modal {
       width: 100%;
       max-width: 520px;
-      background: var(--bg-card);
-      border: 1.5px solid var(--border-subtle);
+      background: linear-gradient(180deg, rgba(32, 10, 13, 0.98) 0%, rgba(16, 5, 7, 0.99) 100%);
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
       border-radius: var(--card-radius);
       padding: 28px 24px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95), 0 0 40px rgba(220, 38, 38, 0.25);
     }
     /* Access Gate Lock Screen */
     .poweradmin-gate {
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at center, rgba(15, 5, 5, 0.96) 0%, rgba(0, 0, 0, 0.99) 100%);
+      background: radial-gradient(circle at center, rgba(30, 8, 10, 0.98) 0%, rgba(0, 0, 0, 0.99) 100%);
       z-index: 2500;
       display: flex;
       align-items: center;
@@ -150,12 +239,12 @@
     .gate-card {
       width: 100%;
       max-width: 480px;
-      background: linear-gradient(180deg, rgba(30, 10, 10, 0.94) 0%, rgba(15, 5, 5, 0.98) 50%, rgba(5, 5, 5, 1) 100%);
-      border: 1.5px solid rgba(220, 38, 38, 0.45);
+      background: linear-gradient(180deg, rgba(38, 10, 12, 0.96) 0%, rgba(20, 5, 6, 0.98) 50%, rgba(8, 2, 3, 1) 100%);
+      border: 1.5px solid rgba(239, 68, 68, 0.55);
       border-radius: 16px;
       padding: 38px 32px;
       text-align: center;
-      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95), 0 0 40px rgba(220, 38, 38, 0.15);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95), 0 0 50px rgba(220, 38, 38, 0.25);
     }
   </style>
 </head>
@@ -164,7 +253,7 @@
   <!-- Restricted PowerAdmin Gate Overlay -->
   <div class="poweradmin-gate" id="poweradminGate" role="dialog" aria-modal="true" aria-label="Administrative Gate">
     <div class="gate-card">
-      <img src="/assets/TYSONSoftwareBanner.png" alt="TYSON Software" class="auth-banner-logo" style="height: 52px; margin-bottom: 14px;">
+      <img src="/assets/TYSONPowerAdminBanner.png" alt="TYSON PowerAdmin" class="auth-banner-logo" style="height: 52px; margin-bottom: 14px;">
       <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">Administrative Clearance Required</span>
       <h1 class="auth-heading" style="font-size: 2rem; margin: 10px 0 4px;">TYSON Administration</h1>
       <p class="brand-tmg-domain" style="font-size: 1.25rem; color: #fca5a5; margin-bottom: 12px;">power.administration.tysonmediagroup.org</p>
@@ -197,7 +286,7 @@
   <!-- Global Main Header -->
   <header class="main-header">
     <a href="/" class="topbar-left">
-      <img src="/assets/TYSONSoftwareBanner.png" alt="TYSON Software" class="logo-img">
+      <img src="/assets/TYSONPowerAdminBanner.png" alt="TYSON PowerAdmin" class="logo-img">
     </a>
 
     <nav class="main-nav">
