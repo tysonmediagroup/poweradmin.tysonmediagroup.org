@@ -4,10 +4,68 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TYSON Administration | power.administration.tysonmediagroup.org</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <style>
-    /* PowerAdmin Crimson Obsidian Aero Theme */
+    /* PP Editorial New Web Fonts (Pangram Pangram) */
+    @font-face {
+      font-family: 'PP Editorial New';
+      src: local('PP Editorial New Regular'), local('PP Editorial New'), local('PPEditorialNew-Regular'), local('PPEditorialNew'),
+           url('/assets/fonts/PPEditorialNew-Regular.otf') format('opentype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'PP Editorial New';
+      src: local('PP Editorial New Italic'), local('PPEditorialNew-Italic'),
+           url('/assets/fonts/PPEditorialNew-Italic.otf') format('opentype');
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'PP Editorial New';
+      src: local('PP Editorial New Ultralight'), local('PPEditorialNew-Ultralight'), local('PPEditorialNew-Light'),
+           url('/assets/fonts/PPEditorialNew-Ultralight.otf') format('opentype');
+      font-weight: 200 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'PP Editorial New';
+      src: local('PP Editorial New Ultralight Italic'), local('PPEditorialNew-UltralightItalic'),
+           url('/assets/fonts/PPEditorialNew-UltralightItalic.otf') format('opentype');
+      font-weight: 200 300;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'PP Editorial New';
+      src: local('PP Editorial New Ultrabold'), local('PPEditorialNew-Ultrabold'), local('PP Editorial New Bold'),
+           url('/assets/fonts/PPEditorialNew-Ultrabold.otf') format('opentype');
+      font-weight: 700 800;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'PP Editorial New';
+      src: local('PP Editorial New Ultrabold Italic'), local('PPEditorialNew-UltraboldItalic'),
+           url('/assets/fonts/PPEditorialNew-UltraboldItalic.otf') format('opentype');
+      font-weight: 700 800;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    :root {
+      --font-editorial: 'PP Editorial New', 'PPEditorialNew', 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+    }
+
+    /* PowerAdmin Crimson Obsidian Aero Theme & Editorial Typography */
     body.poweradmin-body {
+      --font-heading: 'PP Editorial New', 'PPEditorialNew', 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
       background-color: #060102;
       background-image:
         radial-gradient(ellipse 90% 45% at 50% -5%, rgba(239, 68, 68, 0.28) 0%, rgba(185, 28, 28, 0.12) 40%, rgba(15, 2, 4, 0.95) 75%, #000000 100%),
@@ -52,6 +110,25 @@
 
     .poweradmin-body .card-title {
       color: #ffffff;
+      font-family: var(--font-heading);
+      font-size: 1.85rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+
+    .poweradmin-body .auth-heading {
+      font-family: var(--font-heading);
+      font-size: 2.35rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .poweradmin-body .domain-centerpiece-sub {
+      font-family: var(--font-heading);
+      font-style: italic;
+      font-size: 1.15rem;
+      color: #fca5a5;
+      letter-spacing: 0.02em;
     }
 
     .poweradmin-body .form-input {
@@ -107,11 +184,12 @@
     }
     .stat-number {
       font-family: var(--font-heading);
-      font-size: 2.4rem;
-      font-weight: 600;
+      font-size: 2.85rem;
+      font-weight: 400;
       color: #fca5a5;
       text-shadow: 0 0 16px rgba(239, 68, 68, 0.55);
       line-height: 1;
+      letter-spacing: -0.01em;
     }
     .stat-label {
       font-size: 0.85rem;
