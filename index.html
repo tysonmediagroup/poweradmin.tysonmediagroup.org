@@ -535,7 +535,7 @@
   <section class="tmg-editorial-stage">
     <span class="editorial-tag" style="color: #f87171; border-color: rgba(220, 38, 38, 0.4);">TYSON Administration &bull; Security Node</span>
     <h2 class="domain-centerpiece-title brand-tmg-domain">power.administration.tysonmediagroup.org</h2>
-    <p class="domain-centerpiece-sub">Administrative Moderation, Directory Management &bull; Zero Captcha / Zero Verification</p>
+    <p class="domain-centerpiece-sub">Administrative Moderation, Directory Management &bull; PBKDF2-SHA256 &amp; Cloudflare D1</p>
   </section>
 
   <main class="dashboard-main" style="max-width: 1400px; margin: 0 auto 60px; padding: 0 1.5rem;">
@@ -588,8 +588,16 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="flyPassword">Initial Password *</label>
-            <input type="text" id="flyPassword" class="form-input" value="hug" required>
+            <label class="form-label" for="flyPassword">Initial Password * (min 8 chars)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="flyPassword" class="form-input" minlength="8" placeholder="Min 8 chars or generate" required>
+              <button type="button" id="flyGenPassBtn" class="btn" title="Generate 18-char CSPRNG password" style="white-space: nowrap;">Generate</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="flyStaffId">Staff ID (optional)</label>
+            <input type="text" id="flyStaffId" class="form-input" placeholder="e.g. 212" maxlength="16">
           </div>
 
           <div class="form-group">
@@ -626,10 +634,14 @@
             <input type="checkbox" id="flyShowRealName" checked>
             <span>Show Real Name Publicly</span>
           </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem;">
+            <input type="checkbox" id="flyIsPowerAdmin">
+            <span>Grant PowerAdmin Clearance</span>
+          </label>
         </div>
 
         <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.15rem; background: #dc2626; border-color: #ef4444;">
-          Create User on the Fly &rarr;
+          Create User &rarr;
         </button>
       </form>
     </section>
@@ -767,13 +779,15 @@
     </div>
   </aside>
 
-  <script src="/mytyson-core.js"></script>
+  <script src="/sdk/mytyson.js"></script>
   <script>
     (function () {
       var core = window.MyTysonCore;
       var gate = document.getElementById('poweradminGate');
       var gateErrorBox = document.getElementById('gateErrorBox');
       var toast = document.getElementById('adminToast');
+      var accountsCache = [];
+      var activeAdminSession = null;
 
       // Unlock Audio Sting (!ADMINISTRATION!.mp3)
       var unlockAudio = new Audio('/assets/!ADMINISTRATION!.mp3');
@@ -821,146 +835,144 @@
         }
       }
 
-      function showToast(msg) {
+      function showToast(msg, isError) {
         toast.textContent = msg;
+        toast.style.borderColor = isError ? 'rgba(220, 38, 38, 0.7)' : 'var(--border-hover)';
         toast.classList.add('visible');
-        setTimeout(function () { toast.classList.remove('visible'); }, 3200);
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () { toast.classList.remove('visible'); }, 3600);
       }
 
-      function updateAdminBadge(activeSlug) {
+      function generatePassword(len) {
+        var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*-_+=';
+        var buf = new Uint8Array(len || 18);
+        crypto.getRandomValues(buf);
+        var out = '';
+        for (var i = 0; i < buf.length; i++) {
+          out += alphabet[buf[i] % alphabet.length];
+        }
+        return out;
+      }
+
+      function updateAdminBadge(session) {
         var adminLabel = document.getElementById('adminBadgeLabel');
         if (!adminLabel) return;
-        var acc = core.findAccount(activeSlug);
-        var displayName = (acc && (acc.name || acc.displayName)) || activeSlug || 'Administrator';
+        var displayName = (session && (session.name || session.slug)) || 'Administrator';
         adminLabel.textContent = displayName + ' \u2022 Administrator';
       }
 
-      function checkAccess() {
-        var params = new URLSearchParams(window.location.search);
-        var ssoParam = params.get('mytyson_sso');
-        if (ssoParam) {
-          try {
-            var decoded = JSON.parse(atob(ssoParam));
-            if (decoded && decoded.slug) {
-              if (core.isPowerAdmin(decoded.slug)) {
-                var acc = core.findAccount(decoded.slug);
-                if (acc) core.createSessionForAccount(acc);
-                unlockGate(true);
-                updateAdminBadge(decoded.slug);
-                return true;
-              }
-            }
-          } catch (e) {}
-        }
-
-        var session = core.getSession();
-        if (session && session.slug && core.isPowerAdmin(session.slug)) {
-          unlockGate(true);
-          updateAdminBadge(session.slug);
-          return true;
-        }
-
-        gate.classList.remove('unlocked');
-        isGateUnlocked = false;
-        if (session && session.slug) {
-          gateErrorBox.textContent = 'Access Denied: Your account (@' + session.slug + ') does not have administrative clearance.';
-          gateErrorBox.classList.add('visible');
-        }
-        return false;
+      async function refreshDirectory() {
+        accountsCache = await core.getAccountsAsync();
+        renderDirectory();
       }
 
-      document.getElementById('gateLoginForm').addEventListener('submit', function (e) {
+      document.getElementById('gateLoginForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         gateErrorBox.classList.remove('visible');
         var u = document.getElementById('gateUsername').value.trim();
         var p = document.getElementById('gatePassword').value;
 
-        var acc = core.findAccount(u);
-        if (!acc || !core.isPowerAdmin(acc.slug)) {
-          gateErrorBox.textContent = 'Access Denied: Your account does not have administrative clearance.';
+        var res = await core.authenticate(u, p);
+        if (!res.ok || !res.session) {
+          gateErrorBox.textContent = res.error || 'Invalid administrative credentials.';
+          gateErrorBox.classList.add('visible');
+          return;
+        }
+        if (!core.isPowerAdmin(res.session)) {
+          await core.logout();
+          gateErrorBox.textContent = 'Access Denied: Your account (@' + res.session.slug + ') does not have administrative clearance.';
           gateErrorBox.classList.add('visible');
           return;
         }
 
-        var s = core.authenticate(u, p);
-        if (!s) {
-          gateErrorBox.textContent = 'Invalid administrative credentials.';
-          gateErrorBox.classList.add('visible');
-          return;
-        }
-
+        activeAdminSession = res.session;
         unlockGate(true);
-        updateAdminBadge(acc.slug);
-        renderDirectory();
+        updateAdminBadge(res.session);
+        await refreshDirectory();
       });
 
-      document.getElementById('adminSignOutBtn').addEventListener('click', function () {
-        core.clearSession();
+      document.getElementById('adminSignOutBtn').addEventListener('click', async function () {
+        await core.logout();
         window.location.reload();
       });
 
       function renderDirectory() {
-        var all = core.getAllAccounts();
+        var all = accountsCache || [];
         var tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
 
         var total = all.length;
         var teamCount = 0;
-        var dynamicCount = 0;
+        var otherCount = 0;
 
         var search = (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
 
         all.forEach(function (acc) {
           if (acc.team === 'Y') teamCount++;
-          if (acc.isDynamic) dynamicCount++;
+          if (['tyson', 't', 'a', 'flame', 'rpm', 'contact', 'j.gantt', 'eythn', 'jmay'].indexOf(acc.slug) === -1) {
+            otherCount++;
+          }
 
           if (search) {
-            var matchStr = (acc.name + ' ' + acc.slug + ' ' + (acc.role || '') + ' ' + (acc.division || '')).toLowerCase();
+            var matchStr = (acc.name + ' ' + acc.slug + ' ' + (acc.role || '') + ' ' + (acc.division || '') + ' ' + (acc.staffId || '')).toLowerCase();
             if (matchStr.indexOf(search) === -1) return;
           }
 
           var tr = document.createElement('tr');
+          var safeSlug = core.escapeHtml(acc.slug);
+          var safeName = core.escapeHtml(acc.name || acc.slug);
+          var safeUsername = core.escapeHtml(acc.username || acc.slug);
+          var safeRole = core.escapeHtml(acc.role || 'Member');
+          var safeDivision = core.escapeHtml(acc.division || 'TYSON Media Group');
+          var safeBadge = core.escapeHtml(acc.badge || 'Member');
+          var safeBadgeClass = core.escapeHtml(acc.badgeClass || 'badge-member');
+          var safeInitials = core.escapeHtml(acc.initials || core.getInitials(acc.name, acc.slug));
+          var safePfp = acc.pfpUrl ? core.escapeHtml(core.resolveMediaUrl(acc.pfpUrl)) : '';
 
-          var avatarHtml = acc.pfpUrl
-            ? '<img src="' + acc.pfpUrl + '" alt="' + acc.name + '">'
-            : (acc.initials || acc.slug.slice(0, 2).toUpperCase());
+          var avatarHtml = safePfp
+            ? '<img src="' + safePfp + '" alt="' + safeName + '">'
+            : safeInitials;
 
-          var isProtected = (acc.slug === 'tyson' || acc.slug === 't' || acc.slug === 'ash' || acc.slug === 'a');
+          var isProtected = (
+            acc.slug === 'tyson' ||
+            acc.slug === 't' ||
+            acc.slug === 'a' ||
+            (activeAdminSession && acc.slug === activeAdminSession.slug)
+          );
 
           tr.innerHTML =
             '<td>' +
               '<div class="user-avatar-cell">' +
-                '<div class="mini-avatar" style="background: ' + (acc.avatarBg || '#18181b') + ';">' + avatarHtml + '</div>' +
+                '<div class="mini-avatar" style="background: #18181b;">' + avatarHtml + '</div>' +
                 '<div>' +
-                  '<div class="user-name-title">' + (acc.name || acc.slug) + '</div>' +
+                  '<div class="user-name-title">' + safeName + '</div>' +
                   '<div style="font-size: 0.78rem; color: var(--text-muted);">' + (acc.showRealName === false ? 'Name hidden publicly' : 'Name visible') + '</div>' +
                 '</div>' +
               '</div>' +
             '</td>' +
-            '<td><span class="brand-tmg-domain" style="color: #ffffff;">@' + acc.slug + '</span><div style="font-size: 0.75rem; color: var(--text-dim);">' + acc.username + '</div></td>' +
-            '<td><div class="user-role-text">' + (acc.role || 'Member') + '</div><div style="font-size: 0.78rem; color: var(--text-muted);">' + (acc.division || 'TYSON') + '</div></td>' +
-            '<td><span class="status-badge ' + (acc.team === 'Y' ? 'badge-team' : 'badge-member') + '">' + (acc.team === 'Y' ? 'Team: Y' : 'Team: N') + '</span></td>' +
+            '<td><span class="brand-tmg-domain" style="color: #ffffff;">@' + safeSlug + '</span><div style="font-size: 0.75rem; color: var(--text-dim);">' + safeUsername + (acc.staffId ? ' &bull; ID ' + core.escapeHtml(acc.staffId) : '') + '</div></td>' +
+            '<td><div class="user-role-text">' + safeRole + '</div><div style="font-size: 0.78rem; color: var(--text-muted);">' + safeDivision + '</div></td>' +
+            '<td><span class="status-badge ' + (acc.team === 'Y' ? 'badge-team' : 'badge-member') + '">' + (acc.team === 'Y' ? 'Team: Y' : 'Team: N') + '</span>' + (acc.isPowerAdmin ? ' <span class="status-badge badge-official" style="font-size:0.7rem;">Admin</span>' : '') + '</td>' +
             '<td>' +
               (acc.hasTysonBadge ? '<span class="tyson-white-badge" style="height: 22px; padding: 2px 6px; margin-right: 4px;"><img src="/assets/tyson-white-badge.png" style="height: 12px;"></span>' : '') +
-              '<span class="status-badge ' + (acc.badgeClass || 'badge-member') + '" style="font-size: 0.72rem;">' + (acc.badge || 'Member') + '</span>' +
+              '<span class="status-badge ' + safeBadgeClass + '" style="font-size: 0.72rem;">' + safeBadge + '</span>' +
             '</td>' +
             '<td style="text-align: right;">' +
               '<div class="action-btn-group" style="justify-content: flex-end;">' +
-                '<a href="https://tysonmediagroup.org/' + acc.slug + '" target="_blank" class="btn btn-xs">Profile &rarr;</a>' +
-                '<button type="button" class="btn btn-xs js-reset-pass" data-slug="' + acc.slug + '">Reset Password</button>' +
-                '<button type="button" class="btn btn-xs js-edit-user" data-slug="' + acc.slug + '">Edit</button>' +
-                (!isProtected ? '<button type="button" class="btn btn-xs btn-danger js-delete-user" data-slug="' + acc.slug + '">Delete</button>' : '') +
+                '<a href="https://tysonmediagroup.org/' + encodeURIComponent(acc.slug) + '" target="_blank" rel="noopener" class="btn btn-xs">Profile &rarr;</a>' +
+                '<button type="button" class="btn btn-xs js-reset-pass" data-slug="' + safeSlug + '">Reset Password</button>' +
+                '<button type="button" class="btn btn-xs js-edit-user" data-slug="' + safeSlug + '">Edit</button>' +
+                (!isProtected ? '<button type="button" class="btn btn-xs btn-danger js-delete-user" data-slug="' + safeSlug + '">Delete</button>' : '') +
               '</div>' +
             '</td>';
 
           tbody.appendChild(tr);
         });
 
-        document.getElementById('statTotalUsers').textContent = total;
-        document.getElementById('statTeamUsers').textContent = teamCount;
-        document.getElementById('statDynamicUsers').textContent = dynamicCount;
+        document.getElementById('statTotalUsers').textContent = String(total);
+        document.getElementById('statTeamUsers').textContent = String(teamCount);
+        document.getElementById('statDynamicUsers').textContent = String(otherCount);
 
-        // Attach action handlers
         document.querySelectorAll('.js-reset-pass').forEach(function (btn) {
           btn.addEventListener('click', function () {
             openPasswordModal(btn.getAttribute('data-slug'));
@@ -974,47 +986,64 @@
         });
 
         document.querySelectorAll('.js-delete-user').forEach(function (btn) {
-          btn.addEventListener('click', function () {
+          btn.addEventListener('click', async function () {
             var slug = btn.getAttribute('data-slug');
-            if (confirm('Are you sure you want to delete user @' + slug + ' on the fly?')) {
-              core.deleteAccount(slug, function () {
+            if (confirm('Are you sure you want to delete user @' + slug + ' permanently?')) {
+              var res = await core.deleteAccount(slug);
+              if (res.ok) {
                 showToast('Deleted user @' + slug);
-                core.syncAccountsFromCloud(renderDirectory);
-              });
+                await refreshDirectory();
+              } else {
+                showToast(res.error || 'Failed to delete @' + slug, true);
+              }
             }
           });
         });
       }
 
-      // Create User on the Fly Submit
+      var genPassBtn = document.getElementById('flyGenPassBtn');
+      if (genPassBtn) {
+        genPassBtn.addEventListener('click', function () {
+          document.getElementById('flyPassword').value = generatePassword(18);
+        });
+      }
+
       var flyForm = document.getElementById('createFlyForm');
       var flyErr = document.getElementById('createFlyErrorBox');
 
-      flyForm.addEventListener('submit', function (e) {
+      flyForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         flyErr.classList.remove('visible');
 
         var u = document.getElementById('flyUsername').value.trim().toLowerCase();
         var name = document.getElementById('flyDisplayName').value.trim();
         var pass = document.getElementById('flyPassword').value;
+        var staffId = document.getElementById('flyStaffId').value.trim();
         var div = document.getElementById('flyDivision').value.trim();
         var role = document.getElementById('flyRole').value.trim();
         var bType = document.getElementById('flyBadgeType').value;
         var isTeam = document.getElementById('flyIsTeam').checked;
         var hasBadge = document.getElementById('flyHasTysonBadge').checked;
         var showReal = document.getElementById('flyShowRealName').checked;
+        var isPowerAdmin = document.getElementById('flyIsPowerAdmin').checked;
+
+        if (!pass || pass.length < 8) {
+          flyErr.textContent = 'Password must be at least 8 characters.';
+          flyErr.classList.add('visible');
+          return;
+        }
 
         var bText = 'Standard Member';
         if (bType === 'badge-team') bText = 'TYSON Team';
         if (bType === 'badge-official') bText = 'Official TYSON Account';
         if (bType === 'badge-support') bText = 'Official Support Account';
 
-        // Executive creation bypasses the 3-character rule!
-        core.createAccount({
+        var res = await core.upsertAccount({
           username: u,
           slug: u,
           name: name,
           password: pass,
+          staffId: staffId || null,
           division: div,
           role: role,
           team: isTeam ? 'Y' : 'N',
@@ -1022,28 +1051,30 @@
           badgeClass: bType,
           hasTysonBadge: hasBadge,
           showRealName: showReal,
-          isPowerAdmin: true
-        }, function (res) {
-          if (!res || !res.ok) {
-            flyErr.textContent = (res && res.error) ? res.error : 'Creation failed';
-            flyErr.classList.add('visible');
-            return;
-          }
-          showToast('User @' + u + ' created successfully on the fly!');
-          flyForm.reset();
-          document.getElementById('flyPassword').value = 'hug';
-          document.getElementById('flyIsTeam').checked = true;
-          document.getElementById('flyHasTysonBadge').checked = true;
-          core.syncAccountsFromCloud(renderDirectory);
+          isPowerAdmin: isPowerAdmin
         });
+
+        if (!res.ok) {
+          flyErr.textContent = res.error || 'Creation failed';
+          flyErr.classList.add('visible');
+          return;
+        }
+
+        showToast('User @' + u + ' provisioned with PBKDF2-SHA256!');
+        flyForm.reset();
+        document.getElementById('flyPassword').value = '';
+        document.getElementById('flyIsTeam').checked = true;
+        document.getElementById('flyHasTysonBadge').checked = true;
+        document.getElementById('flyShowRealName').checked = true;
+        document.getElementById('flyIsPowerAdmin').checked = false;
+        await refreshDirectory();
       });
 
-      // Modals
       var editModal = document.getElementById('editModalBackdrop');
       var passModal = document.getElementById('passwordModalBackdrop');
 
       function openEditModal(slug) {
-        var acc = core.findAccount(slug);
+        var acc = (accountsCache || []).find(function (a) { return a && a.slug === slug; });
         if (!acc) return;
         document.getElementById('editUserSlug').value = acc.slug;
         document.getElementById('editModalTitle').textContent = 'Edit @' + acc.slug;
@@ -1059,7 +1090,7 @@
       document.getElementById('closeEditModalBtn').addEventListener('click', function () { editModal.classList.remove('open'); });
       document.getElementById('cancelEditBtn').addEventListener('click', function () { editModal.classList.remove('open'); });
 
-      document.getElementById('editUserForm').addEventListener('submit', function (e) {
+      document.getElementById('editUserForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         var slug = document.getElementById('editUserSlug').value;
         var dName = document.getElementById('editDisplayName').value.trim();
@@ -1069,29 +1100,30 @@
         var isTeam = document.getElementById('editIsTeam').checked;
         var hasBadge = document.getElementById('editHasBadge').checked;
 
-        core.updateAccount(slug, {
+        var res = await core.upsertAccount({
+          slug: slug,
           name: dName,
           role: role,
           division: div,
           bio: bio,
           team: isTeam ? 'Y' : 'N',
           hasTysonBadge: hasBadge
-        }, function () {
-          core.saveCustomProfile(slug, {
-            displayName: dName,
-            division: div,
-            bio: bio
-          });
-          showToast('Updated @' + slug);
-          editModal.classList.remove('open');
-          core.syncAccountsFromCloud(renderDirectory);
         });
+
+        if (!res.ok) {
+          showToast(res.error || 'Failed to update @' + slug, true);
+          return;
+        }
+        showToast('Updated @' + slug);
+        editModal.classList.remove('open');
+        await refreshDirectory();
       });
 
       function openPasswordModal(slug) {
         document.getElementById('passModalSlug').value = slug;
-        document.getElementById('passModalTargetUser').textContent = 'Setting password for: @' + slug;
+        document.getElementById('passModalTargetUser').textContent = 'Setting PBKDF2 password for: @' + slug + ' (min 8 chars)';
         document.getElementById('newPasswordInput').value = '';
+        document.getElementById('newPasswordInput').minLength = 8;
         passModal.classList.add('open');
         document.getElementById('newPasswordInput').focus();
       }
@@ -1099,31 +1131,43 @@
       document.getElementById('closePassModalBtn').addEventListener('click', function () { passModal.classList.remove('open'); });
       document.getElementById('cancelPassBtn').addEventListener('click', function () { passModal.classList.remove('open'); });
 
-      document.getElementById('resetPassForm').addEventListener('submit', function (e) {
+      document.getElementById('resetPassForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         var slug = document.getElementById('passModalSlug').value;
-        var newPass = document.getElementById('newPasswordInput').value.trim();
-        if (!newPass) return;
+        var newPass = document.getElementById('newPasswordInput').value;
+        if (!newPass || newPass.length < 8) {
+          showToast('New password must be at least 8 characters.', true);
+          return;
+        }
 
-        core.updateAccount(slug, { password: newPass }, function () {
-          showToast('Password updated on the fly for @' + slug);
-          passModal.classList.remove('open');
-        });
+        var res = await core.upsertAccount({ slug: slug, password: newPass });
+        if (!res.ok) {
+          showToast(res.error || 'Password reset failed', true);
+          return;
+        }
+        showToast('Password rotated & sessions revoked for @' + slug);
+        passModal.classList.remove('open');
       });
 
       document.getElementById('userSearchInput').addEventListener('input', renderDirectory);
-      document.getElementById('refreshUsersBtn').addEventListener('click', function () {
-        core.syncAccountsFromCloud(renderDirectory);
-      });
+      document.getElementById('refreshUsersBtn').addEventListener('click', refreshDirectory);
 
-      // Init
-      if (core.syncAccountsFromCloud) {
-        core.syncAccountsFromCloud(function () {
-          if (checkAccess()) renderDirectory();
-        });
-      } else {
-        if (checkAccess()) renderDirectory();
-      }
+      core.initThemeDrawer();
+      core.ready().then(async function (session) {
+        if (session && core.isPowerAdmin(session)) {
+          activeAdminSession = session;
+          unlockGate(true);
+          updateAdminBadge(session);
+          await refreshDirectory();
+          return;
+        }
+        gate.classList.remove('unlocked');
+        isGateUnlocked = false;
+        if (session && session.slug) {
+          gateErrorBox.textContent = 'Access Denied: Your account (@' + session.slug + ') does not have administrative clearance.';
+          gateErrorBox.classList.add('visible');
+        }
+      });
     })();
   </script>
 </body>
